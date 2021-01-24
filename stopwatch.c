@@ -108,7 +108,7 @@ MODULE_DEVICE_TABLE(of, timer_of_match);
 
 static irqreturn_t xilaxitimer_isr(int irq,void*dev_id)	{  // Se poziva samo za Timer0 overflow, pa ispod se mora proveriti da li je TCR1 = 0xffffffff
 	unsigned int data = 0;
-	
+
 	// Clear Interrupt
 	data = ioread32(tp->base_addr + XIL_AXI_TIMER_TCSR_OFFSET);
 	iowrite32(data | XIL_AXI_TIMER_CSR_INT_OCCURED_MASK,
@@ -159,11 +159,11 @@ static void setup_and_start_timer(unsigned int startAt0, unsigned int startAt1) 
 	iowrite32(data & ~(XIL_AXI_TIMER_CSR_LOAD_MASK),
 			tp->base_addr + XIL_AXI_TIMER_TCSR1_OFFSET);
 
-	// Enable interrupts and autoreload, rest should be zero
+	// Enable interrupts and disable autoreaload, don't want seconds to restart from startAt values
 	iowrite32(XIL_AXI_TIMER_CSR_ENABLE_INT_MASK | XIL_AXI_TIMER_CSR_CASC_MASK,
 			tp->base_addr + XIL_AXI_TIMER_TCSR_OFFSET);
 
-	// Start Timer bz setting enable signal
+	// Start Timer by setting enable signal
 
 	data = ioread32(tp->base_addr + XIL_AXI_TIMER_TCSR_OFFSET);
 	iowrite32(data | XIL_AXI_TIMER_CSR_ENABLE_TMR_MASK,
@@ -241,6 +241,7 @@ error1:
 	return rc;
 }
 
+// Stop timers, remove virtual memory map and undo all allocations
 static int timer_remove(struct platform_device *pdev){
 	// Disable timer
 	unsigned int data=0;
@@ -267,6 +268,7 @@ int stopwatch_close(struct inode *pinode, struct file *pfile) {
 	return 0;
 }
 
+// Returns current stopwatch time in the following format: hh:mm:ss:milliseconds:microseconds when reading /dev/stopwatch
 ssize_t stopwatch_read(struct file *pfile, char __user *buffer, size_t length, loff_t *offset) {
 
 	long int len = 0;
@@ -305,6 +307,7 @@ ssize_t stopwatch_read(struct file *pfile, char __user *buffer, size_t length, l
 		return len;
 }
 
+// Allows for start, stop(pause) and reset functionality
 ssize_t stopwatch_write(struct file *pfile, const char __user *buffer, size_t length, loff_t *offset) {
 	char buff[BUFF_SIZE];
 	int ret = 0;
@@ -365,6 +368,8 @@ ssize_t stopwatch_write(struct file *pfile, const char __user *buffer, size_t le
 	return length;
 }
 
+
+// Allocates char device and registers a device with kernel, maps a cdev file in /dev/
 static int __init timer_init(void){
 	int ret = 0;
 
@@ -413,6 +418,7 @@ fail_0:
 	return -1;
 }
 
+// Undo all device mappings
 static void __exit timer_exit(void){
 	platform_driver_unregister(&timer_driver);
 	cdev_del(my_cdev);
