@@ -108,9 +108,7 @@ MODULE_DEVICE_TABLE(of, timer_of_match);
 
 static irqreturn_t xilaxitimer_isr(int irq,void*dev_id)	{  // Se poziva samo za Timer0 overflow, pa ispod se mora proveriti da li je TCR1 = 0xffffffff
 	unsigned int data = 0;
-
-
-	printk(KERN_INFO "xilaxitimer_isr: Timer0 Overflow.\n");
+	
 	// Clear Interrupt
 	data = ioread32(tp->base_addr + XIL_AXI_TIMER_TCSR_OFFSET);
 	iowrite32(data | XIL_AXI_TIMER_CSR_INT_OCCURED_MASK,
