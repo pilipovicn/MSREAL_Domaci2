@@ -76,7 +76,8 @@ ssize_t stopwatch_write(struct file *pfile, const char __user *buffer, size_t le
 static int __init timer_init(void);
 static void __exit timer_exit(void);
 
-static irqreturn_t xilaxitimer_isr(int irq,void*dev_id); // Nije bas moguce testirati jer 64bitni brojac ovde moze brojati preko 50 miliona sati
+// Nije bas moguce testirati ISR jer 64bitni brojac ovde moze brojati preko 50 miliona sati
+static irqreturn_t xilaxitimer_isr(int irq,void*dev_id); 
 
 int secondPass = 1;
 
@@ -106,7 +107,8 @@ static struct platform_driver timer_driver = {
 
 MODULE_DEVICE_TABLE(of, timer_of_match);
 
-static irqreturn_t xilaxitimer_isr(int irq,void*dev_id)	{  // Se poziva samo za Timer0 overflow, pa ispod se mora proveriti da li je TCR1 = 0xffffffff
+// ISR se poziva samo za Timer0 overflow, pa ispod se mora proveriti da li je TCR1 = 0xffffffff
+static irqreturn_t xilaxitimer_isr(int irq,void*dev_id)	{  
 	unsigned int data = 0;
 
 	// Clear Interrupt
@@ -124,6 +126,7 @@ static irqreturn_t xilaxitimer_isr(int irq,void*dev_id)	{  // Se poziva samo za 
 	return IRQ_HANDLED;
 }
 
+// Used for initial register setup and every stopwatch start thereafter
 static void setup_and_start_timer(unsigned int startAt0, unsigned int startAt1) {
 
 	unsigned int data = 0;
@@ -159,7 +162,7 @@ static void setup_and_start_timer(unsigned int startAt0, unsigned int startAt1) 
 	iowrite32(data & ~(XIL_AXI_TIMER_CSR_LOAD_MASK),
 			tp->base_addr + XIL_AXI_TIMER_TCSR1_OFFSET);
 
-	// Enable interrupts and disable autoreaload, don't want seconds to restart from startAt values
+	// Enable interrupts and cascade and disable autoreaload, don't want seconds to restart from startAt values
 	iowrite32(XIL_AXI_TIMER_CSR_ENABLE_INT_MASK | XIL_AXI_TIMER_CSR_CASC_MASK,
 			tp->base_addr + XIL_AXI_TIMER_TCSR_OFFSET);
 
@@ -172,11 +175,12 @@ static void setup_and_start_timer(unsigned int startAt0, unsigned int startAt1) 
 
 }
 
+// Fetch resources, physical address range, map to virtual memory and assign ISR to the timer interrupt
 static int timer_probe(struct platform_device *pdev){
 	struct resource *r_mem;
 	int rc = 0;
 
-	// Get phisical register adress space from device tree
+	// Get physical register adress space from device tree
 	r_mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	if (!r_mem) {
 		printk(KERN_ALERT "xilaxitimer_probe: Failed to get reg resource\n");
@@ -190,7 +194,7 @@ static int timer_probe(struct platform_device *pdev){
 		return -ENOMEM;
 	}
 
-	// Put phisical adresses in timer_info structure
+	// Put physical adresses in timer_info structure
 	tp->mem_start = r_mem->start;
 	tp->mem_end = r_mem->end;
 
@@ -202,7 +206,7 @@ static int timer_probe(struct platform_device *pdev){
 		goto error1;
 	}
 
-	// Remap phisical to virtual adresses
+	// Remap physical to virtual adresses
 	tp->base_addr = ioremap(tp->mem_start, tp->mem_end - tp->mem_start + 1);
 	if (!tp->base_addr) {
 		printk(KERN_ALERT "xilaxitimer_probe: Could not allocate memory\n");
