@@ -47,7 +47,7 @@
 
 MODULE_LICENSE("Dual BSD/GPL");
 MODULE_AUTHOR ("Pilipovic");
-MODULE_DESCRIPTION("Stopwatch Xiling AXI Timer driver example.");
+MODULE_DESCRIPTION("Stopwatch Xilinx AXI Timer driver example.");
 
 struct timer_info {
 	unsigned long mem_start;
