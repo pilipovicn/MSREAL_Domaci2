@@ -162,7 +162,7 @@ static void setup_and_start_timer(unsigned int startAt0, unsigned int startAt1) 
 	iowrite32(data & ~(XIL_AXI_TIMER_CSR_LOAD_MASK),
 			tp->base_addr + XIL_AXI_TIMER_TCSR1_OFFSET);
 
-	// Enable interrupts and cascade and disable autoreaload, don't want seconds to restart from startAt values
+	// Enable interrupts and cascade and disable autoreaload, don't want seconds to restart from startAt values (every 42s timer would transition to TLR values)
 	iowrite32(XIL_AXI_TIMER_CSR_ENABLE_INT_MASK | XIL_AXI_TIMER_CSR_CASC_MASK,
 			tp->base_addr + XIL_AXI_TIMER_TCSR_OFFSET);
 
